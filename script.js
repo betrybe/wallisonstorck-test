@@ -1,3 +1,7 @@
+window.addEventListener('load', () => {
+  console.log('Script running!');
+});
+
 function createProductImageElement(imageSource) {
   const img = document.createElement('img');
   img.className = 'item__image';
@@ -15,12 +19,12 @@ function createCustomElement(element, className, innerText) {
 function createProductItemElement({ sku, name, image }) {
   const section = document.createElement('section');
   section.className = 'item';
-
+  
   section.appendChild(createCustomElement('span', 'item__sku', sku));
   section.appendChild(createCustomElement('span', 'item__title', name));
   section.appendChild(createProductImageElement(image));
   section.appendChild(createCustomElement('button', 'item__add', 'Adicionar ao carrinho!'));
-
+  
   return section;
 }
 
@@ -39,5 +43,30 @@ function createCartItemElement({ sku, name, salePrice }) {
   li.addEventListener('click', cartItemClickListener);
   return li;
 }
+
+function productListing(items) { // Mapeia a section e anexa os produtos
+  const sectionItems = document.querySelector('.items'); // Aponta para a section
+  items.forEach((item) => { // Percorre todos os itens adicionando-os a section
+    const element = createProductItemElement(item);
+    sectionItems.appendChild(element);
+  });
+}
+
+async function getProductAPI() { // Carrega os dados do endpoint e guarda na variavel global
+  try {
+    const dataLoad = await fetch('https://api.mercadolibre.com/sites/MLB/search?q=computador'); // Dados "brutos"
+    const dataInJson = await dataLoad.json(); // Dados em formato json
+    const products = dataInJson.results.map((product) => ({ // Criando um novo array somente com os dados necessarios
+      sku: product.id,
+      name: product.title,
+      image: product.thumbnail,
+    }));
+    productListing(products); // Chama a função responsável por listar os produtos
+  } catch (error) {
+    console.log(error); // Se der erro, mostre-o.
+  }
+}
+
+getProductAPI(); // Chama a função que faz a carga dos dados.
 
 window.onload = () => { };
