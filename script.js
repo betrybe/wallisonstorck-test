@@ -1,7 +1,3 @@
-window.addEventListener('load', () => {
-  console.log('Script running!');
-});
-
 function createProductImageElement(imageSource) {
   const img = document.createElement('img');
   img.className = 'item__image';
@@ -32,10 +28,32 @@ function getSkuFromProductItem(item) {
   return item.querySelector('span.item__sku').innerText;
 }
 
-function cartItemClickListener(event) {
+function removeProductFromCart(item) { // Remove o produto do localStorage
+  const savedItems = JSON.parse(localStorage.getItem('productItems')); // Carrega todos os itens do localStorage
+  const itemToRemove = item.innerText; // Carrega a descrição item a ser removido
+  const skuItemToRemove = itemToRemove.substring(5, 18); // Extrai o sku (id) da descrição do item a ser removido
+  console.log(skuItemToRemove);
+  for (let i = 0; i < savedItems.length; i++) { // QUAL É O PROBLEMA COM O INCREMENTO?
+    if (savedItems[i].sku === skuItemToRemove) { // Percorre todos os itens comparando os sku
+      savedItems.splice(i, 1); // Remove o item.
+      break; // Interrompe o laço
+    }
+  }
+  // savedItems.forEach((element) => {
+  //   if (savedItems.sku === skuItemToRemove) {
+  //     savedItems.splice(element, 1);
+  //   }
+  // });
+  localStorage.setItem('productItems', JSON.stringify(savedItems));
+
+  console.log(savedItems);
+}
+
+function cartItemClickListener(event) { // PRECISA FAZER REPAROS
   const item = event.path[0]; // LEMBRAR DE REMOVER ISSO.
   const ol = document.querySelector('.cart__items'); // Mapeia a lista de itens
   ol.removeChild(item); // Remove o item clicado.
+  removeProductFromCart(item); // Chama a função para remover também do localStorage
 }
 
 function createCartItemElement({ sku, name, salePrice }) {
@@ -46,8 +64,19 @@ function createCartItemElement({ sku, name, salePrice }) {
   return li;
 }
 
-async function addProductToCart(event) {
-  // console.log(event);
+function saveProductFromCart(item) { // Salva produtos do carrinho para recarregamento da pagina
+  const savedItems = localStorage.getItem('productItems'); // Carrega os itens do localStorage
+  if (savedItems) { // Se tiver algo no já salvo no localStorage, então junte o novo item e salve
+    const itemsToSave = JSON.parse(savedItems); // "Itens para salvar" recebe os itens que estavam salvos no localStorage
+    itemsToSave.push(item); // O novo item é adicionado.
+    localStorage.setItem('productItems', JSON.stringify(itemsToSave));
+  } else { // Senão salva o primeiro item do carrinho
+    const firstItemToSaved = [item];
+    localStorage.setItem('productItems', JSON.stringify(firstItemToSaved));
+  }
+}
+
+async function addProductToCart(event) { // PRECISA FAZER REPAROS
   // console.log(event.path); // PROVISÓRIO P/ PEGAR O ELEMENTO, DESFAZER ESSA GAMBIARRA
   const item = event.path[1]; // LEMBRAR DE MUDAR ISSO
   const skuItem = getSkuFromProductItem(item); // Busca pelo "id" ou "sku" do item.
@@ -58,6 +87,8 @@ async function addProductToCart(event) {
     name: itemDataInJson.title,
     salePrice: itemDataInJson.price,
   };
+  saveProductFromCart(productItem); // Chama a função que salva itens do carrinho no localStorage
+
   const ol = document.querySelector('.cart__items'); // Mapeia a ol que vai abrigar os itens do carrinho
   ol.appendChild(createCartItemElement(productItem)); // Anexa o item criado na ol
 }
@@ -65,11 +96,10 @@ async function addProductToCart(event) {
 function productListing(items) { // Mapeia a section e anexa os produtos
   const sectionItems = document.querySelector('.items'); // Aponta para a section
   items.forEach((item) => { // Percorre todos os itens adicionando-os a section
-    const element = createProductItemElement(item);
+    const element = createProductItemElement(item); // Chama a função de criar item passando como parâmetro o elemento atual
     element.querySelector('button').addEventListener('click', addProductToCart); // Adiciona um evento de click já que o botão não tem "onclick"
     sectionItems.appendChild(element); // Anexa o elemento criado a section
   });
-  // console.log(sectionItems);
 }
 
 async function getProductAPI() { // Carrega os dados do endpoint.
@@ -87,6 +117,23 @@ async function getProductAPI() { // Carrega os dados do endpoint.
   }
 }
 
-getProductAPI(); // Chama a função que faz a carga dos dados.
+function init() { // Função inicial que checa se é a primeira vez que a pagina é aberta ou não.
+  const savedItems = localStorage.getItem('productItems'); // Carrega os itens do localStorage
+  if (savedItems) { // Se tiver algo no já salvo no localStorage, então carrega os dados no carrinho
+    const itemsToLoad = JSON.parse(savedItems); // "Itens para carregar" recebe os dados do localStorage
+    const ol = document.querySelector('.cart__items'); // Mapeia a ol que vai abrigar os itens do carrinho (fora do forEach pois a leitura do DOM é "caro")
+    // console.log(JSON.parse(savedItems));
+    
+    itemsToLoad.forEach((item) => { // Percorre todos itens do array
+      ol.appendChild(createCartItemElement(item)); // Cria o tem e anexa o item criado na ol     
+    });
+    
+    getProductAPI(); // Chama a função que faz a carga dos dados.
+  } else { // Senão começa tudo do 0
+    getProductAPI(); // Chama a função que faz a carga dos dados.
+  }
+}
 
-window.onload = () => { };
+window.onload = () => {
+  init(); // Chamada da primeira função ("start" da aplicação)
+};
