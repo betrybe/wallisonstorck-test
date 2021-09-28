@@ -11,6 +11,10 @@
   justify-content: center;
 }
 
+.loading{
+  font-size: 2rem;
+}
+
 .item {
   border: 2px solid blue;
   border-radius: 5px;
@@ -63,3 +67,8 @@
 .cart__item{
   margin: 10px 0;
 }
+
+/* .price .total-price{
+  margin: 0;
+  display: inline;
+} */

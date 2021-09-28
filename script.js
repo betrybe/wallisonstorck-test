@@ -39,23 +39,30 @@ function calculateTotalPrice() { // Calcula o valor total do carrinho a cada inc
     const itemValueInFloat = parseFloat(itemValue); // Transforma em float
     sumOfValues += itemValueInFloat; // Soma o valor
   });
-  spanTotalPrice.textContent = `Preço total: $${sumOfValues}`; // Seta o valor no carrinho.
+  // spanTotalPrice.textContent = `Preço total: $${sumOfValues}`; // Seta o valor no carrinho.
+  spanTotalPrice.textContent = sumOfValues; // Seta o valor no carrinho.
+}
+
+function emptyCart() { // Esvazia o carrinho de compras
+  const ol = document.querySelector('.cart__items'); // Mapeia a lista de itens
+  ol.innerHTML = ''; // Seta o ol com vazio
+  calculateTotalPrice(); // Recalcula o valor total do carrinho
+  localStorage.clear(); // Limpa localStorage
 }
 
 function removeProductFromCart(item) { // Remove o produto do localStorage
   const savedItems = JSON.parse(localStorage.getItem('productItems')); // Carrega todos os itens do localStorage
   const itemToRemove = item.innerText.match(/MLB(\d+)/g); // Extrai o sku (id) da descrição do item a ser removido atraves de expressão regular
   const skuItemToRemove = itemToRemove.toString(); // Extrai o sku (id) da descrição do item a ser removido
-
-  console.log(`Excluido: ${skuItemToRemove}`);
+  
   for (let i = 0; i < savedItems.length; i += 1) { // QUAL É O PROBLEMA COM O INCREMENTO?
     if (savedItems[i].sku === skuItemToRemove) { // Percorre todos os itens comparando os sku
       savedItems.splice(i, 1); // Remove o item.
       break; // Interrompe o laço
     }
   }
-  localStorage.setItem('productItems', JSON.stringify(savedItems));
-  console.log(savedItems);
+
+  localStorage.setItem('productItems', JSON.stringify(savedItems)); // Salva o restante dos itens
   calculateTotalPrice(); // Recalcula o valor total do carrinho
 }
 
@@ -92,11 +99,13 @@ async function addProductToCart(event) { // PRECISA FAZER REPAROS
   const skuItem = getSkuFromProductItem(item); // Busca pelo "id" ou "sku" do item.
   const itemData = await fetch(`https://api.mercadolibre.com/items/${skuItem}`); // Faz requisição a API com identificação do item
   const itemDataInJson = await itemData.json(); // Transforma os dados da requisição em JSON
+  
   const productItem = { // Separa somente os dados necessários do item
     sku: itemDataInJson.id,
     name: itemDataInJson.title,
     salePrice: itemDataInJson.price,
   };
+  
   saveProductFromCart(productItem); // Chama a função que salva itens do carrinho no localStorage
   const ol = document.querySelector('.cart__items'); // Mapeia a ol que vai abrigar os itens do carrinho
   ol.appendChild(createCartItemElement(productItem)); // Anexa o item criado (li) na ol
@@ -105,6 +114,9 @@ async function addProductToCart(event) { // PRECISA FAZER REPAROS
 
 function productListing(items) { // Mapeia a section e anexa os produtos
   const sectionItems = document.querySelector('.items'); // Aponta para a section
+  const h1Loading = sectionItems.querySelector('.loading'); // Mapeando o h1 através da sectionItems para economizar o DOM
+  sectionItems.removeChild(h1Loading); // Removendo o "loading..." da tela.
+
   items.forEach((item) => { // Percorre todos os itens adicionando-os a section
     const element = createProductItemElement(item); // Chama a função de criar item passando como parâmetro o elemento atual
     element.querySelector('button').addEventListener('click', addProductToCart); // Adiciona um evento de click já que o botão não tem "onclick"
@@ -138,8 +150,10 @@ function init() { // Função inicial que checa se é a primeira vez que a pagin
     });
     
     calculateTotalPrice(); // Recalcula o valor total do carrinho
+    
     getProductAPI(); // Chama a função que faz a carga dos dados.
   } else { // Senão começa tudo do 0
+    console.log('carregando do 0');
     getProductAPI(); // Chama a função que faz a carga dos dados.
   }
 }
