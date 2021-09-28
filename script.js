@@ -28,25 +28,35 @@ function getSkuFromProductItem(item) {
   return item.querySelector('span.item__sku').innerText;
 }
 
+function calculateTotalPrice() { // Calcula o valor total do carrinho a cada inclusão ou exclusão
+  const allLi = document.querySelectorAll('li'); // Mapeia a lista de itens 
+  const spanTotalPrice = document.querySelector('.total-price'); // Mapeia o elemento que mostra o valor total 
+  let sumOfValues = 0; // Para guardar a soma dos valores.
+  allLi.forEach((li) => { // Para cada item, trate os dados e faça a soma
+    const descriptionOfValue = li.innerText.match(/PRICE: (\D?)(\d+).(\d+)/g); // Busca o preço na descrição atraves de uma expressão regular.
+    const stringWithValue = descriptionOfValue.toString(); // Transforma em string
+    const itemValue = stringWithValue.substring(8, stringWithValue.length); // Extrai somente o numero
+    const itemValueInFloat = parseFloat(itemValue); // Transforma em float
+    sumOfValues += itemValueInFloat; // Soma o valor
+  });
+  spanTotalPrice.textContent = `Preço total: $${sumOfValues}`; // Seta o valor no carrinho.
+}
+
 function removeProductFromCart(item) { // Remove o produto do localStorage
   const savedItems = JSON.parse(localStorage.getItem('productItems')); // Carrega todos os itens do localStorage
-  const itemToRemove = item.innerText; // Carrega a descrição item a ser removido
-  const skuItemToRemove = itemToRemove.substring(5, 18); // Extrai o sku (id) da descrição do item a ser removido
-  console.log(skuItemToRemove);
-  for (let i = 0; i < savedItems.length; i++) { // QUAL É O PROBLEMA COM O INCREMENTO?
+  const itemToRemove = item.innerText.match(/MLB(\d+)/g); // Extrai o sku (id) da descrição do item a ser removido atraves de expressão regular
+  const skuItemToRemove = itemToRemove.toString(); // Extrai o sku (id) da descrição do item a ser removido
+
+  console.log(`Excluido: ${skuItemToRemove}`);
+  for (let i = 0; i < savedItems.length; i += 1) { // QUAL É O PROBLEMA COM O INCREMENTO?
     if (savedItems[i].sku === skuItemToRemove) { // Percorre todos os itens comparando os sku
       savedItems.splice(i, 1); // Remove o item.
       break; // Interrompe o laço
     }
   }
-  // savedItems.forEach((element) => {
-  //   if (savedItems.sku === skuItemToRemove) {
-  //     savedItems.splice(element, 1);
-  //   }
-  // });
   localStorage.setItem('productItems', JSON.stringify(savedItems));
-
   console.log(savedItems);
+  calculateTotalPrice(); // Recalcula o valor total do carrinho
 }
 
 function cartItemClickListener(event) { // PRECISA FAZER REPAROS
@@ -71,8 +81,8 @@ function saveProductFromCart(item) { // Salva produtos do carrinho para recarreg
     itemsToSave.push(item); // O novo item é adicionado.
     localStorage.setItem('productItems', JSON.stringify(itemsToSave));
   } else { // Senão salva o primeiro item do carrinho
-    const firstItemToSaved = [item];
-    localStorage.setItem('productItems', JSON.stringify(firstItemToSaved));
+    const firstItemToSaved = [item]; // Salva o item dentro de um array
+    localStorage.setItem('productItems', JSON.stringify(firstItemToSaved)); // Grava no localStorage
   }
 }
 
@@ -82,15 +92,15 @@ async function addProductToCart(event) { // PRECISA FAZER REPAROS
   const skuItem = getSkuFromProductItem(item); // Busca pelo "id" ou "sku" do item.
   const itemData = await fetch(`https://api.mercadolibre.com/items/${skuItem}`); // Faz requisição a API com identificação do item
   const itemDataInJson = await itemData.json(); // Transforma os dados da requisição em JSON
-  const productItem = { // Separa os dados necessários do item
+  const productItem = { // Separa somente os dados necessários do item
     sku: itemDataInJson.id,
     name: itemDataInJson.title,
     salePrice: itemDataInJson.price,
   };
   saveProductFromCart(productItem); // Chama a função que salva itens do carrinho no localStorage
-
   const ol = document.querySelector('.cart__items'); // Mapeia a ol que vai abrigar os itens do carrinho
-  ol.appendChild(createCartItemElement(productItem)); // Anexa o item criado na ol
+  ol.appendChild(createCartItemElement(productItem)); // Anexa o item criado (li) na ol
+  calculateTotalPrice(); // Recalcula o valor total do carrinho
 }
 
 function productListing(items) { // Mapeia a section e anexa os produtos
@@ -122,12 +132,12 @@ function init() { // Função inicial que checa se é a primeira vez que a pagin
   if (savedItems) { // Se tiver algo no já salvo no localStorage, então carrega os dados no carrinho
     const itemsToLoad = JSON.parse(savedItems); // "Itens para carregar" recebe os dados do localStorage
     const ol = document.querySelector('.cart__items'); // Mapeia a ol que vai abrigar os itens do carrinho (fora do forEach pois a leitura do DOM é "caro")
-    // console.log(JSON.parse(savedItems));
     
     itemsToLoad.forEach((item) => { // Percorre todos itens do array
       ol.appendChild(createCartItemElement(item)); // Cria o tem e anexa o item criado na ol     
     });
     
+    calculateTotalPrice(); // Recalcula o valor total do carrinho
     getProductAPI(); // Chama a função que faz a carga dos dados.
   } else { // Senão começa tudo do 0
     getProductAPI(); // Chama a função que faz a carga dos dados.
