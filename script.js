@@ -1,3 +1,18 @@
+/**
+ * Definição de strings que vão ser repetidas algumas vezes durante o codigo
+ */
+const classNames = {
+  LOADING: '.loading',
+  ITEMS: '.items',  
+  TOTAL_PRICE: '.total-price',
+  CART_ITEMS: '.cart__items',
+};
+
+/**
+ * Função para criação da imagem dos itens, ela
+ * recebe como parâmetro o link da imagem do item,
+ * cria e o retorna a outro função que o solicitou.
+ */
 function createProductImageElement(imageSource) {
   const img = document.createElement('img');
   img.className = 'item__image';
@@ -5,6 +20,13 @@ function createProductImageElement(imageSource) {
   return img;
 }
 
+/**
+ * Função também responsável por criar itens,
+ * ela atua juntamente com a "createProductItemElement"
+ * ao ser chamada ela cria qualquer item necessário
+ * como spans, buttons, basta passar o nome do item,
+ * classe e texto.
+ */
 function createCustomElement(element, className, innerText) {
   const e = document.createElement(element);
   e.className = className;
@@ -12,6 +34,11 @@ function createCustomElement(element, className, innerText) {
   return e;
 }
 
+/**
+ * A função responsável por criar os card dos itens,
+ * ela é invocada dentro da função "productListing",
+ * cria o item e retorna-o.
+ */
 function createProductItemElement({ sku, name, image }) {
   const section = document.createElement('section');
   section.className = 'item';
@@ -24,32 +51,54 @@ function createProductItemElement({ sku, name, image }) {
   return section;
 }
 
+/**
+ * Função que retorna o sku do item, ao passar
+ * um item para essa função ela retornará uma
+ * string com o código "MLB"
+ */
 function getSkuFromProductItem(item) {
   return item.querySelector('span.item__sku').innerText;
 }
 
-function calculateTotalPrice() { // Calcula o valor total do carrinho a cada inclusão ou exclusão
-  const savedItems = JSON.parse(localStorage.getItem('productItems')); // Carrega todos os itens do localStorage 
-  const spanTotalPrice = document.querySelector('.total-price'); // Mapeia o elemento que mostra o valor total 
-  let sumOfValues = 0; // Para guardar a soma dos valores.
-  
-  if (savedItems) { // Se tiver algo salvo, então soma.
-    savedItems.forEach((item) => { // Para cada item, trate os dados e faça a soma
-      sumOfValues += item.salePrice; // Soma o valor
-    });
+/**
+ * Essa função soma o valor de todos os itens do carrinho,
+ * ela é chamada toda vez que precisa-se atualizar o valor total.
+ */
+function calculateTotalPrice() { 
+  const items = JSON.parse(localStorage.getItem('productItems')); // Carrega todos os itens do localStorage 
+  const spanTotalPrice = document.querySelector(classNames.TOTAL_PRICE); // Mapeia o elemento que mostra o valor total 
+
+  if (items) { 
+    // Usamos o 'reduce' um metodo que usa dois parâmetros, um acumulador ou "contador" e o valor corrente, inicializando com 0.
+    const sumOfValues = items.reduce((accumulator, current) => accumulator + current.salePrice, 0);
+    spanTotalPrice.textContent = sumOfValues; // Seta o valor no carrinho formatado com 2 casas decimais
+  } else {
+    spanTotalPrice.textContent = 0; // Seta o valor no carrinho.
   }
-  
-  spanTotalPrice.textContent = sumOfValues; // Seta o valor no carrinho.
 }
 
+/**
+ * Essa função bem simples, esvazia o carrinho de compras
+ * quando o usuário clicar no botão "Esvaziar carrinho" e
+ * limpa também o localStorage.
+ */
 function emptyCart() { // Esvazia o carrinho de compras
-  const ol = document.querySelector('.cart__items'); // Mapeia a lista de itens
+  const ol = document.querySelector(classNames.CART_ITEMS); // Mapeia a lista de itens
   ol.innerHTML = ''; // Seta o ol com vazio
   localStorage.clear(); // Limpa localStorage
   calculateTotalPrice(); // Recalcula o valor total do carrinho
 }
 
-function removeProductFromCart(item) { // Remove o produto do localStorage
+/**
+ * A função removeProductFromLocalStorage como o próprio nome
+ * diz, remove itens do carrinho, uma pouco mais complexa ela
+ * carrega os itens do localStorage, procura por uma expressão
+ * regular no item que ela recebeu por parâmetro para extrair
+ * o código que começa com "MLB", pois ele é o sku ou "id" que
+ * vai ser usado para comparar com os itens salvos e remover do
+ * localStorage o item que foi removido do carrinho...
+ */
+function removeProductFromLocalStorage(item) { // Remove o produto do localStorage
   const savedItems = JSON.parse(localStorage.getItem('productItems')); // Carrega todos os itens do localStorage
   const itemToRemove = item.innerText.match(/MLB(\d+)/g); // Extrai o sku (id) da descrição do item a ser removido atraves de expressão regular
   const skuItemToRemove = itemToRemove.toString(); // Extrai o sku (id) da descrição do item a ser removido
@@ -65,13 +114,22 @@ function removeProductFromCart(item) { // Remove o produto do localStorage
   calculateTotalPrice(); // Recalcula o valor total do carrinho
 }
 
-function cartItemClickListener(event) { // PRECISA FAZER REPAROS
-  const item = event.path[0]; // LEMBRAR DE REMOVER ISSO.
-  const ol = document.querySelector('.cart__items'); // Mapeia a lista de itens
+/**
+ * Essa função cartItemClickListener, remove o item do carrinho, 
+ * ao ser clicada ela é invocada, remove o item e também faz a chamada
+ * da função para atualizar o localStorage
+ */
+function cartItemClickListener() { 
+  const item = this; // "item" recebe o próprio elemento que foi clicado
+  const ol = document.querySelector(classNames.CART_ITEMS); // Mapeia a lista de itens
   ol.removeChild(item); // Remove o item clicado.
-  removeProductFromCart(item); // Chama a função para remover também do localStorage
+  removeProductFromLocalStorage(item); // Chama a função para remover também do localStorage
 }
 
+/**
+ * Essa função cria o elemento "li", ou "list item", ela trata
+ * a descrição do item como: id, nome e o preço do produto.
+ */
 function createCartItemElement({ sku, name, salePrice }) {
   const li = document.createElement('li');
   li.className = 'cart__item';
@@ -80,7 +138,12 @@ function createCartItemElement({ sku, name, salePrice }) {
   return li;
 }
 
-function saveProductFromCart(item) { // Salva produtos do carrinho para recarregamento da pagina
+/**
+ * Esta função é a responsável por salvar os itens do carrinho
+ * no localStorage, toda vez que um item entra ou sai do carrinho
+ * ela e chamada para atualizar os itens.
+ */
+function saveProductToLocalStorage(item) { // Salva produtos do carrinho para recarregamento da pagina
   const savedItems = localStorage.getItem('productItems'); // Carrega os itens do localStorage
   if (savedItems) { // Se tiver algo no já salvo no localStorage, então junte o novo item e salve
     const itemsToSave = JSON.parse(savedItems); // "Itens para salvar" recebe os itens que estavam salvos no localStorage
@@ -92,9 +155,15 @@ function saveProductFromCart(item) { // Salva produtos do carrinho para recarreg
   }
 }
 
-async function addProductToCart(event) { // PRECISA FAZER REPAROS
-  console.log(event.path); // PROVISÓRIO P/ PEGAR O ELEMENTO, DESFAZER ESSA GAMBIARRA
-  const item = event.path[1]; // LEMBRAR DE MUDAR ISSO
+/**
+ * addProductToCart por sua vez, também é uma função que faz
+ * requisição de dados, mas agora do item que o usuário escolheu
+ * colocar no carrinho, então ela faz a requisição a API,
+ * trata os dados para serem salvos no localStorage por outra
+ * função, e coloca o item no carrinho.
+ */
+async function addProductToCart() { 
+  const item = this.parentNode; // Pega o pai do elemento que chega, considerando que chega o button
   const skuItem = getSkuFromProductItem(item); // Busca pelo "id" ou "sku" do item.
   const itemData = await fetch(`https://api.mercadolibre.com/items/${skuItem}`); // Faz requisição a API com identificação do item
   const itemDataInJson = await itemData.json(); // Transforma os dados da requisição em JSON
@@ -105,16 +174,20 @@ async function addProductToCart(event) { // PRECISA FAZER REPAROS
     salePrice: itemDataInJson.price,
   };
   
-  saveProductFromCart(productItem); // Chama a função que salva itens do carrinho no localStorage
-  const ol = document.querySelector('.cart__items'); // Mapeia a ol que vai abrigar os itens do carrinho
+  saveProductToLocalStorage(productItem); // Chama a função que salva itens do carrinho no localStorage
+  const ol = document.querySelector(classNames.CART_ITEMS); // Mapeia a ol que vai abrigar os itens do carrinho
   ol.appendChild(createCartItemElement(productItem)); // Anexa o item criado (li) na ol
   calculateTotalPrice(); // Recalcula o valor total do carrinho
 }
 
-function productListing(items) { // Mapeia a section e anexa os produtos
-  const sectionItems = document.querySelector('.items'); // Aponta para a section
-  const h1Loading = sectionItems.querySelector('.loading'); // Mapeando o h1 através da sectionItems para economizar o DOM
+/**
+ * Essa função quando invocada, listará todos itens na tela do usuário
+ */
+function productListing(items) { 
+  const sectionItems = document.querySelector(classNames.ITEMS); // Aponta para a section
+  const h1Loading = sectionItems.querySelector(classNames.LOADING); // Mapeando o h1 através da sectionItems para economizar o DOM
   sectionItems.removeChild(h1Loading); // Removendo o "loading..." da tela.
+  console.log(h1Loading);
 
   items.forEach((item) => { // Percorre todos os itens adicionando-os a section
     const element = createProductItemElement(item); // Chama a função de criar item passando como parâmetro o elemento atual
@@ -123,7 +196,12 @@ function productListing(items) { // Mapeia a section e anexa os produtos
   });
 }
 
-async function getProductAPI() { // Carrega os dados do endpoint.
+/**
+ * Função responsável por fazer a "carga" dos dados da API
+ * através do endpoint fornecido, essa função também trata
+ * alguns dados para que sejam passados a frente para outra função
+ */
+async function getProductAPI() { 
   try {
     const dataLoad = await fetch('https://api.mercadolibre.com/sites/MLB/search?q=computador'); // Dados "brutos"
     const dataInJson = await dataLoad.json(); // Dados em formato json
@@ -138,11 +216,15 @@ async function getProductAPI() { // Carrega os dados do endpoint.
   }
 }
 
-function init() { // Função inicial que checa se é a primeira vez que a pagina é aberta ou não.
+/**
+ * Função inicial ou "primeira função da aplicação",
+ * ela checa se é ou não a primeira vez que o usuário abriu a pagina
+ */
+function init() { 
   const savedItems = localStorage.getItem('productItems'); // Carrega os itens do localStorage
   if (savedItems) { // Se tiver algo no já salvo no localStorage, então carrega os dados no carrinho
     const itemsToLoad = JSON.parse(savedItems); // "Itens para carregar" recebe os dados do localStorage
-    const ol = document.querySelector('.cart__items'); // Mapeia a ol que vai abrigar os itens do carrinho (fora do forEach pois a leitura do DOM é "caro")
+    const ol = document.querySelector(classNames.CART_ITEMS); // Mapeia a ol que vai abrigar os itens do carrinho (fora do forEach pois a leitura do DOM é "caro")
     
     itemsToLoad.forEach((item) => { // Percorre todos itens do array
       ol.appendChild(createCartItemElement(item)); // Cria o tem e anexa o item criado na ol     
@@ -152,10 +234,14 @@ function init() { // Função inicial que checa se é a primeira vez que a pagin
     getProductAPI(); // Chama a função que faz a carga dos dados.
   } else { // Senão começa tudo do 0
     getProductAPI(); // Chama a função que faz a carga dos dados.
-    emptyCart(); // Limpa o carrinho só por segurança
+    emptyCart(); // Para garantir que o carrinho começará vazio, limpe-o.
   }
 }
 
+/**
+ * "Start" da aplicação, garante que após todos os
+ * elementos HTML forem carregados as funções iniciam
+ */
 window.onload = () => {
-  init(); // Chamada da primeira função ("start" da aplicação)
+  init();
 };
