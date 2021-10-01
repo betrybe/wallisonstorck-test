@@ -71,7 +71,7 @@ function calculateTotalPrice() {
   if (items) { 
     // Usamos o 'reduce' um metodo que usa dois parâmetros, um acumulador ou "contador" e o valor corrente, inicializando com 0.
     const sumOfValues = items.reduce((accumulator, current) => accumulator + current.salePrice, 0);
-    spanTotalPrice.textContent = sumOfValues; // Seta o valor no carrinho formatado com 2 casas decimais
+    spanTotalPrice.textContent = sumOfValues; // Seta o valor no carrinho.
   } else {
     spanTotalPrice.textContent = 0; // Seta o valor no carrinho.
   }
@@ -187,7 +187,6 @@ function productListing(items) {
   const sectionItems = document.querySelector(classNames.ITEMS); // Aponta para a section
   const h1Loading = sectionItems.querySelector(classNames.LOADING); // Mapeando o h1 através da sectionItems para economizar o DOM
   sectionItems.removeChild(h1Loading); // Removendo o "loading..." da tela.
-  console.log(h1Loading);
 
   items.forEach((item) => { // Percorre todos os itens adicionando-os a section
     const element = createProductItemElement(item); // Chama a função de criar item passando como parâmetro o elemento atual
